@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Relevé Bancaire</title>
+    <style>
+        body { font-family: 'Helvetica', sans-serif; font-size: 10pt; color: black; margin: 0; padding: 0; }
+        .container { padding: 30px; }
+
+        /* EN-TETE */
+        .bank-title { font-size: 24px; font-weight: bold; color: #0056b3; margin: 0; }
+        .logo-box { background-color: #0056b3; color: white; padding: 5px 10px; font-weight: bold; border-radius: 4px; margin-right: 10px; }
+        .doc-title { font-size: 20px; font-weight: bold; text-align: right; text-transform: uppercase; }
+
+        /* BOITES D'INFOS */
+        .info-table { width: 100%; margin-bottom: 30px; border-collapse: collapse; }
+        .info-box { border: 1px solid #333; padding: 15px; width: 48%; vertical-align: top; border-radius: 5px; }
+        .box-title { border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-bottom: 10px; font-weight: bold; font-size: 8pt; color: #666; text-transform: uppercase; }
+
+        /* TABLEAU DES OPERATIONS */
+        .table-ops { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .table-ops th { background-color: #f2f2f2; border: 1px solid #333; padding: 10px; font-weight: bold; text-align: center; }
+        .table-ops td { border: 1px solid #333; padding: 8px; font-size: 9pt; }
+
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+        .text-danger { color: #cc0000; }
+        .text-success { color: #008000; }
+
+        /* PIED DE PAGE */
+        .footer { position: fixed; bottom: 20px; width: 100%; text-align: center; font-size: 8pt; color: #777; border-top: 1px solid #ccc; padding-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- SECTION EN-TETE -->
+    <table style="width: 100%; border-bottom: 2px solid #0056b3; padding-bottom: 10px; margin-bottom: 20px;">
+        <tr>
+            <td style="width: 60%;">
+                <div>
+                    <span class="logo-box">EGA</span>
+                    <span class="bank-title">EGA BANK</span>
+                </div>
+                <div style="font-size: 9pt; color: #444; margin-top: 5px;">
+                    Siège Social : 07 BP 12338, Lomé - TOGO<br/>
+                    Contact : +228 90 16 26 61 | support@egabank.com
+                </div>
+            </td>
+            <td style="width: 40%; text-align: right; vertical-align: top;">
+                <div class="doc-title">Relevé de Compte</div>
+                <div style="font-weight: bold; margin-top: 5px;" th:text="${periode}">du -- au --</div>
+                <div style="font-size: 8pt; color: #666;">Date d'édition : <span th:text="${dateEdition}">01/01/2026</span></div>
+            </td>
+        </tr>
+    </table>
+
+    <!-- SECTION INFOS CLIENT ET COMPTE -->
+    <table class="info-table">
+        <tr>
+            <td class="info-box">
+                <div class="box-title">Titulaire du Compte</div>
+                <div style="font-size: 11pt; font-weight: bold; margin-bottom: 5px;" th:text="${client.nom + ' ' + client.prenom}">NOM PRENOM</div>
+                <div th:text="${client.adresse}">Adresse</div>
+                <div th:text="${client.telephone}">Téléphone</div>
+                <div th:text="${client.email}">Email</div>
+            </td>
+            <td style="width: 4%;"></td> <!-- Espacement -->
+            <td class="info-box" style="background-color: #fcfcfc;">
+                <div class="box-title">Détails du Compte</div>
+                <div style="margin-bottom: 3px;"><strong>Numéro :</strong> <span style="font-family: monospace;" th:text="${compte.numCompte}">FR123456...</span></div>
+
+                <!-- utilise la variable typeCompte calculée en Java -->
+                <div style="margin-bottom: 3px;"><strong>Type :</strong> <span th:text="${typeCompte}">--</span></div>
+
+                <div style="margin-top: 10px; font-size: 11pt;">
+                    <strong>Solde actuel :</strong>
+                    <span style="color: #0056b3; font-weight: bold;" th:text="${#numbers.formatDecimal(compte.solde, 1, 'WHITESPACE', 0, 'POINT') + ' CFA'}">0 CFA</span>
+                </div>
+            </td>
+        </tr>
+    </table>
+
+    <!-- TABLEAU  -->
+    <table class="table-ops">
+        <thead>
+        <tr> <!-- balise -->
+            <th style="width: 15%;">Date</th>
+            <th style="width: 35%;">Désignation de l'opération</th>
+            <th style="width: 15%;">Débit</th>
+            <th style="width: 15%;">Crédit</th>
+            <th style="width: 20%;">Solde (CFA)</th>
+        </tr> <!--  -->
+        </thead>
+        <tbody>
+        <tr th:each="op : ${operations}">
+            <td class="text-center" th:text="${#dates.format(op.dateOperation, 'dd/MM/yyyy')}"></td>
+            <td th:text="${op.description}"></td>
+            <td class="text-right text-danger">
+                <span th:if="${op.typeOperation.name() == 'DEBIT'}"
+                      th:text="${'- ' + #numbers.formatDecimal(op.montant, 1, 'WHITESPACE', 0, 'POINT')}"></span>
+            </td>
+            <td class="text-right text-success">
+                <span th:if="${op.typeOperation.name() == 'CREDIT'}"
+                      th:text="${'+ ' + #numbers.formatDecimal(op.montant, 1, 'WHITESPACE', 0, 'POINT')}"></span>
+            </td>
+            <!-- SOLDE PROGRESSIF -->
+            <td class="text-right" style="font-weight: bold; background-color: #fcfcfc;">
+                <span th:text="${#numbers.formatDecimal(op.soldeApres, 1, 'WHITESPACE', 0, 'POINT')}"></span>
+            </td>
+        </tr>
+        <!-- smsss si aucune opération  -->
+        <tr th:if="${#lists.isEmpty(operations)}">
+            <td colspan="5" class="text-center" style="padding: 20px; color: #888;">Aucun mouvement enregistré sur cette période.</td>
+        </tr>
+        </tbody>
+    </table>
+
+    <!-- PIED DE PAGE -->
+    <div class="footer">
+        EGA BANK S.A. au capital de 10 000 000 CFA - Agrément N° T/123/B - Lomé, Togo.<br/>
+        <em>Ce relevé est un document officiel généré par notre système bancaire sécurisé.</em>
+    </div>
+</div>
+
+</body>
+</html>
